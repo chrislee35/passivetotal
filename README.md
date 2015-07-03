@@ -18,6 +18,31 @@ Or install it yourself as:
 
     $ gem install passivetotal
 
+## Command Line Tool
+
+Included in the gem is a command-line tool, passivetotal, with the following usage:
+
+	Usage: passivetotal [-h] [-v] [-k <apikey>] [[-m|-p|-c|-t|-e|-w] <ip or dom>] [[-s|-d] <dom>] [-x <ip>] [-l <ip or hash>] [-i <value>]
+	-h                Help
+	-v                Verbose output
+	-k <apikey>       Sets the APIKEY, defaults to the environment variable PASSIVETOTAL_APIKEY
+	ACTIONS (You have to select one, last one wins)  -m <ip or dom>  Queries metadata for given IP or domain
+	  -p <ip or dom>  Queries passive DNS data for given IP or domain
+	  -c <ip or dom>  Queries (or sets) the classification for a given IP or domain
+	  -t <ip or dom>  Queries (adds or removes) the tags associated with a given IP or domain
+	                  * To remove a tag, prepend a dash, '-' to the tag name when using the -i option
+	  -e <ip or dom>  Queries (or sets) the ever compromised flag on a given IP or domain
+	  -w <ip or dom>  Queries (or sets) the watched flag on a given IP or domain
+	  -s <dom>        Queries the subdomains for a given domain
+	  -d <dom>        Queries (or sets) if a domain is a dynamic DNS domain
+	  -x <ip>         Queries (or sets) if a given IP is a sinkhole
+	  -l <ip or hash> Queries for SSL Certificates/IP addresses associated with a given IP or SHA-1 hash
+	SETTING VALUES  -i <value>      Sets the value, used in conjuntion with -c, -t, -e, -w, -d, or -x
+	                  Valid values for -i depend on what it's used with:
+	                  -c : targeted, crime, multiple, benign
+	                  -t : <a tag name consisting of characters: [a-zA-Z_]>
+	                  -e, -w, -d, -x: true, false
+
 ## Usage
 
     # Initialize the API wrapper with an apikey (using the default endpoint URL of https://www.passivetotal.org/api/v1/)
