@@ -9,14 +9,14 @@ Gem::Specification.new do |spec|
   spec.authors       = ["chrislee35"]
   spec.email         = ["rubygems@chrislee.dhs.org"]
 
-  spec.summary       = %q{Wrapper library for PassiveTotal.org's Web API}
+  spec.summary       = %q{Wrapper library for PassiveTotal.org's W  eb API}
   spec.description   = %q{PassiveTotal offers an extensive API for users of the platform that maps most major actions available in the web application to a corresponding call. There are two flavors of the API available for use, stable and current. In order to use the stable API, add the version indicator (vX) into the URL as documented below. If you would rather use the current API which includes new changes and experiments, replace the version indicator with "current".}
   spec.homepage      = "https://github.com/chrislee35/passivetotal"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
-  spec.bindir        = "exe"
-  spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.bindir        = "bin"
+  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
   spec.add_runtime_dependency "json", "~> 1.8"
