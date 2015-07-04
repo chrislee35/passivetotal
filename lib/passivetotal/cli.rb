@@ -148,7 +148,8 @@ module PassiveTotal # :nodoc:
         else
           data = pt.send(options[:method], options[:query])
         end
-        return JSON.pretty_generate(data['results'])
+        data.response.results['response_time'] = data.query.response_time
+        return JSON.pretty_generate(data.response.results)
       end
       return ''
     end

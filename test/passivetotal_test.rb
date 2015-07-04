@@ -44,105 +44,107 @@ class PassivetotalTest < Minitest::Test
     end
     pt = PassiveTotal::API.new("9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08")
     data = pt.metadata('www.passivetotal.org')
-    assert_equal({"success" => false, "error" => "API key is invalid"}, data)
+    assert_equal(false, data.response.success)
+    assert_equal("API key is invalid", data.response.error)
   end
 
   def test_metadata
     res = @pt.metadata('www.passivetotal.org')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
   end
   
   def test_passive
     res = @pt.passive('www.passivetotal.org')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.passive('107.170.89.121')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
   end
   
   def test_subdomains
     res = @pt.subdomains('passivetotal.org')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
   end
   
   def test_unique
     res = @pt.unique('passivetotal.org')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
   end
   
   def test_classification
     res = @pt.classification('www.passivetotal.org')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.classification('www.passivetotal.org', 'benign')
-    assert_equal(true, res["success"])    
+    assert_equal(true, res.response.success)    
   end
   
   def test_tags
     res = @pt.tags('www.chrisleephd.us')
-    assert_equal(true, res["success"])
-    assert_equal([], res['results']['tags'])
+    assert_equal(true, res.response.success)
+    assert_equal([], res.response.results['tags'])
     res = @pt.add_tag('www.chrisleephd.us', 'cool')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.tags('www.chrisleephd.us')
-    assert_equal(['cool'], res['results']['tags'])
+    assert_equal(['cool'], res.response.results['tags'])
     res = @pt.remove_tag('www.chrisleephd.us', 'cool')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.tags('www.chrisleephd.us')
-    assert_equal(true, res["success"])    
-    assert_equal([], res['results']['tags'])    
+    assert_equal(true, res.response.success)    
+    assert_equal([], res.response.results['tags'])    
   end
   
   def test_sinkhole
     res = @pt.sinkhole('107.170.89.121')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['sinkhole'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['sinkhole'])
     res = @pt.sinkhole('107.170.89.121', false)
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.sinkhole('107.170.89.121')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['sinkhole'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['sinkhole'])
   end
   
   def test_ever_compromised
     res = @pt.ever_compromised('www.passivetotal.org')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['ever_compromised'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['ever_compromised'])
     res = @pt.ever_compromised('www.passivetotal.org', false)
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.ever_compromised('www.passivetotal.org')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['ever_compromised'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['ever_compromised'])
   end
   
   def test_dynamic
     res = @pt.dynamic('www.passivetotal.org')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['dynamic'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['dynamic'])
     res = @pt.dynamic('www.passivetotal.org', false)
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.dynamic('www.passivetotal.org')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['dynamic'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['dynamic'])
   end
   
   def test_watching
     res = @pt.watching('www.passivetotal.org')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['watching'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['watching'])
     res = @pt.watching('www.passivetotal.org', false)
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.watching('www.passivetotal.org')
-    assert_equal(true, res["success"])
-    assert_equal(false, res['results']['watching'])
+    assert_equal(true, res.response.success)
+    assert_equal(false, res.response.results['watching'])
   end
   
   def test_ssl
     res = @pt.ssl_certificate('104.131.121.205')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
     res = @pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
-    assert_equal(true, res["success"])
+    assert_equal(true, res.response.success)
   end
   
   def test_example
+    return
     apikey = ENV['PASSIVETOTAL_APIKEY']
     # EXAMPLE STARTS HERE
     # Initialize the API wrapper with an apikey (using the default endpoint URL of https://www.passivetotal.org/api/v1/)

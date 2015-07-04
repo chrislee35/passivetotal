@@ -10,6 +10,10 @@ module PassiveTotal # :nodoc:
   
   class InvalidAPIKeyError < ArgumentError; end
   
+  class Transaction < Struct.new(:query, :response, :response_time); end
+  class Query < Struct.new(:api, :query, :set, :url, :parameters); end
+  class Response < Struct.new(:json, :success, :request_time, :raw_query, :error, :result_count, :results); end
+  
   # The API class wraps the PassiveTotal.org web API for all the verbs that it supports
   # See https://www.passivetotal.org/api/docs for the API documentation.
   class API
@@ -273,7 +277,14 @@ module PassiveTotal # :nodoc:
 			response = http.request(request)
 			delta = (Time.now - t1).to_f
       data = JSON.parse(response.body)
-      return data
+      
+      obj = Transaction.new(
+        Query.new(method, params['query'], params[method] || params['tag'], url, params),
+        Response.new(response.body, data['success'], data['request_time'], data['raw_query'], data['error'], data['result_count'], data['results']),
+        delta
+      )
+
+      return obj
     end
     
     # tests an item to see if it matches a valid type
