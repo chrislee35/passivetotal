@@ -9,10 +9,12 @@ require 'passivetotal/version'
 module PassiveTotal # :nodoc:
   
   class InvalidAPIKeyError < ArgumentError; end
+  class APIUsageError < StandardError; end
+  class ExceededQuotaError < StandardError; end
   
   class Transaction < Struct.new(:query, :response, :response_time); end
   class Query < Struct.new(:api, :query, :set, :url, :parameters); end
-  class Response < Struct.new(:json, :success, :request_time, :raw_query, :error, :result_count, :results); end
+  class Response < Struct.new(:json, :success, :results); end
   
   # The API class wraps the PassiveTotal.org web API for all the verbs that it supports
   # See https://www.passivetotal.org/api/docs for the API documentation.
@@ -25,24 +27,65 @@ module PassiveTotal # :nodoc:
     # initialize a new PassiveTotal::API object
     # apikey: is 64-hexcharacter string
     # endpoint: base URL for the web service, defaults to https://www.passivetotal.org/api/v1/
-    def initialize(apikey, endpoint = 'https://www.passivetotal.org/api/v1/')
+    def initialize(username, apikey, endpoint = 'https://api.passivetotal.org/v2/')
       unless apikey =~ /^[a-fA-F0-9]{64}$/
         raise ArgumentError.new("apikey must be a 64 character hex string")
       end
+      @username = username
       @apikey = apikey
       @endpoint = endpoint
     end
     
-    # Metadata describes the item being queried and includes many of the options available inside of the action API calls.
-    # query: A domain or IP address to query
-    def metadata(query)
-      is_valid_with_error(__method__, [:ipv4, :domain], query)
-      if domain?(query)
-        query = normalize_domain(query)
-      end
-      get(__method__, query)
+    # Account : Get account details your account.
+    def account
+      get('account')
     end
     
+    # Account History : Get history associated with your account.
+    def account_history
+      get('account/history')
+    end
+    
+    alias_method :history, :account_history
+    
+    # Account notifications : Get notifications that have been posted to your account.
+    def account_notifications
+      get('account/notifications')
+    end
+    
+    alias_method :notifications, :account_notifications
+    
+    # Account organization : Get details about the organization your account is associated with.
+    def account_organization
+      get('account/organization')
+    end
+    
+    alias_method :organization, :account_organization
+    
+    # Account organization teamstream : Get the teamstream for the organization your account is associated with.
+    def account_organization_teamstream
+      get('account/organization/teamstream')
+    end
+    
+    alias_method :teamstream, :account_organization_teamstream
+    
+    # Account sources : Get source details for a specific source.
+    def account_sources(source)
+      get('account/sources', {'source' => source})
+    end
+    
+    alias_method :sources, :account_sources
+    
+    # # Metadata describes the item being queried and includes many of the options available inside of the action API calls.
+    # # query: A domain or IP address to query
+    # def metadata(query)
+    #   is_valid_with_error(__method__, [:ipv4, :domain], query)
+    #   if domain?(query)
+    #     query = normalize_domain(query)
+    #   end
+    #   get(__method__, {'query' => query})
+    # end
+    #
     # Passive provides a complete passive DNS picture for a domain or IP address including first/last seen values, deconflicted values, sources used, unique counts and enrichment for all values.
     # query: A domain or IP address to query
     def passive(query)
@@ -50,121 +93,65 @@ module PassiveTotal # :nodoc:
       if domain?(query)
         query = normalize_domain(query)
       end
-      get(__method__, query)
+      get('dns/passive', {'query' => query})
     end
 
-    # Subdomains provides a comprehensive view of all known subdomains for a registered domain with associated passive DNS information. This call is best used to understand the activity of a particular domain over a period of time. Passive DNS information is only deconflicted at the subdomain level, not across the entire domain.
-    # query: A domain to query
+    # Passive provides a complete passive DNS picture for a domain or IP address including first/last seen values, deconflicted values, sources used, unique counts and enrichment for all values.
+    # query: A domain or IP address to query
+    def passive_unique(query)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      get('dns/passive/unique', {'query' => query})
+    end
+    
+    alias_method :unique, :passive_unique
+    
+    # Enrichment : Enrich the given query with metadata
+    def enrichment(query)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      get('enrichment', {'query' => query})
+    end
+    
+    alias_method :metadata, :enrichment
+    
+    def osint(query)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      get('enrichment/osint', {'query' => query})
+    end
+    
     def subdomains(query)
-      is_valid_with_error(__method__, [:domain], query)
-      query = normalize_domain(query)
-      get(__method__, query)
+      get('enrichment/subdomains', {'query' => query})
     end
-
-    # Each domain or IP address with results has a unique set of resolving items. This call provides those unique items and a frequency count of how often they show up in sorted order.
-    # query: A domain or IP address to query
-    def unique(query)
-      is_valid_with_error(__method__, [:ipv4, :domain], query)
-      if domain?(query)
-        query = normalize_domain(query)
-      end
-      get(__method__, query)
-    end
-    
-    # PassiveTotal uses the notion of classifications to highlight table rows a certain color based on how they have been rated.
-    # PassiveTotal::API#classification() queries if only one argument is given, and sets if both are given
-    # query: A domain or IP address to query
-    # set: classification label, one of [targeted, crime, multiple, benign]
-    def classification(query, set=nil)
-      is_valid_with_error(__method__, [:ipv4, :domain], query)
-      if domain?(query)
-        query = normalize_domain(query)
-      end
-      if set.nil?
-        get(__method__, query)
+      
+    # Whois : Get WHOIS data for a domain or IP address
+    def whois(query, field=nil)
+      if field
+        is_valid_with_error(__method__, [:whois_field], field)
+        get('whois/search', {'field' => field, 'query' => query})
       else
-        is_valid_with_error(__method__, [:classification], set)
-        post(__method__, query, set)
+        is_valid_with_error(__method__, [:ipv4, :domain], query)
+        if domain?(query)
+          query = normalize_domain(query)
+        end
+        get('whois', {'query' => query, 'compact_record' => 'false'})
       end
     end
-    
-    # PassiveTotal allows users to notate if an IP address is a known sinkhole. These values are shared globally with everyone in the platform.
-    # PassiveTotal::API#sinkhole() queries if only one argument is given, and sets if both are given
-    # query: An IP address to set as a sinkhole or not
-    # set: String-boolean of "true" or "false"
-    def sinkhole(query, set=nil)
-      is_valid_with_error(__method__, [:ipv4], query)
-      if set.nil?
-        get(__method__, query)
-      else
-        is_valid_with_error(__method__, [:bool], set)
-        post(__method__, query, set)
-      end
-    end
-    
-    # PassiveTotal allows users to notate if a domain or IP address have ever been compromised. These values aid in letting users know that a site may be benign, but it was used in an attack at some point in time.
-    # PassiveTotal::API#ever_compromised() queries if only one argument is given, and sets if both are given
-    # query: A domain or IP address to query
-    # set: String-boolean of "true" or "false"
-    def ever_compromised(query, set=nil)
-      is_valid_with_error(__method__, [:ipv4, :domain], query)
-      if domain?(query)
-        query = normalize_domain(query)
-      end
-      if set.nil?
-        get(__method__, query)
-      else
-        is_valid_with_error(__method__, [:bool], set)
-        post(__method__, query, set)
-      end
-    end
-    
-    # PassiveTotal allows users to notate if a domain is associated with a dynamic DNS provider.
-    # PassiveTotal::API#dynamic() queries if only one argument is given, and sets if both are given
-    # query: A domain to query
-    # set: String-boolean of "true" or "false"
-    def dynamic(query, set=nil)
-      is_valid_with_error(__method__, [:domain], query)
-      query = normalize_domain(query)
-      if set.nil?
-        get(__method__, query)
-      else
-        is_valid_with_error(__method__, [:bool], set)
-        post(__method__, query, set)
-      end
-    end
-    
-    # PassiveTotal allows users to "watch" domains or IP addresses in order to get notified of any changes.
-    # PassiveTotal::API#watching() queries if only one argument is given, and sets if both are given
-    # query: A domain or IP address to query
-    # set: String-boolean of "true" or "false"
-    def watching(query, set=nil)
-      is_valid_with_error(__method__, [:ipv4, :domain], query)
-      if domain?(query)
-        query = normalize_domain(query)
-      end
-      if set.nil?
-        get(__method__, query)
-      else
-        is_valid_with_error(__method__, [:bool], set)
-        post(__method__, query, set)
-      end
-    end
-    
-    # PassiveTotal uses three types of tags (user, global, and temporal) in order to provide context back to the user.
-    # query: A domain or IP address to query
-    def tags(query)
-      is_valid_with_error(__method__, [:ipv4, :domain], query)
-      get("user/tags", query)
-    end
-
+        
     # Add a user-tag to an IP or domain
     # query: A domain or IP address to tag
     # tag: Value used to tag query value. Should only consist of alphanumeric, underscores and hyphen values
     def add_tag(query, tag)
       is_valid_with_error(__method__, [:ipv4, :domain], query)
       is_valid_with_error(__method__, [:tag], tag)
-      post_tag("user/tag/add", query, tag)
+      post('actions/tags', { 'query' => query, 'tags' => tag })
     end
     
     # Remove a user-tag to an IP or domain
@@ -173,17 +160,153 @@ module PassiveTotal # :nodoc:
     def remove_tag(query, tag)
       is_valid_with_error(__method__, [:ipv4, :domain], query)
       is_valid_with_error(__method__, [:tag], tag)
-      post_tag("user/tag/remove", query, tag)
+      delete('actions/tags', { 'query' => query, 'tags' => tag })
     end
     
+    # PassiveTotal uses the notion of classifications to highlight table rows a certain color based on how they have been rated.
+    # PassiveTotal::API#classification() queries if only one argument is given, and sets if both are given
+    # query: A domain or IP address to query
+    def classification(query, set=nil)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      if set.nil?
+        get('actions/classification', {'query' => query})
+      else
+        is_valid_with_error(__method__.to_s, [:classification], set)
+        post('actions/classification', { 'query' => query, 'classification' => set })
+      end
+    end
+    
+    # PassiveTotal allows users to notate if a domain or IP address have ever been compromised. These values aid in letting users know that a site may be benign, but it was used in an attack at some point in time.
+    # PassiveTotal::API#ever_compromised() queries if only one argument is given, and sets if both are given
+    # query: A domain or IP address to query
+    def ever_compromised(query, set=nil)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      if set.nil?
+        get('actions/ever-compromised', {'query' => query})
+      else
+        is_valid_with_error(__method__, [:bool], set)
+        post('actions/ever-compromised', { 'query' => query, 'status' => set })
+      end
+    end
+    
+    alias_method :compromised, :ever_compromised
+    
+    # PassiveTotal allows users to notate if a domain is associated with a dynamic DNS provider.
+    # PassiveTotal::API#dynamic() queries if only one argument is given, and sets if both are given
+    # query: A domain to query
+    def dynamic(query, set=nil)
+      is_valid_with_error(__method__, [:domain], query)
+      query = normalize_domain(query)
+      if set.nil?
+        get('actions/dynamic-dns', {'query' => query})
+      else
+        is_valid_with_error(__method__, [:bool], set)
+        post('actions/dynamic-dns', { 'query' => query, 'status' => set })
+      end
+    end
+    
+    # PassiveTotal allows users to notate if an ip or domain is "monitored".
+    # PassiveTotal::API#monitor() queries if only one argument is given, and sets if both are given
+    # query: A domain to query
+    def monitor(query, set=nil)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      if set.nil?
+        get('actions/monitor', {'query' => query})
+      else
+        is_valid_with_error(__method__, [:bool], set)
+        post('actions/monitor', { 'query' => query, 'status' => set })
+      end
+    end
+    
+    alias_method :monitoring, :monitor
+
+    # PassiveTotal allows users to notate if an IP address is a known sinkhole. These values are shared globally with everyone in the platform.
+    # PassiveTotal::API#sinkhole() queries if only one argument is given, and sets if both are given
+    # query: An IP address to set as a sinkhole or not
+    # set: String-boolean of "true" or "false"
+    def sinkhole(query, set=nil)
+      is_valid_with_error(__method__, [:ipv4], query)
+      if set.nil?
+        get('actions/sinkhole', {'query' => query})
+      else
+        is_valid_with_error(__method__, [:bool], set)
+        post('actions/sinkhole', { 'query' => query, 'status' => set })
+      end
+    end
+    
+
+    # PassiveTotal uses three types of tags (user, global, and temporal) in order to provide context back to the user.
+    # query: A domain or IP address to query
+    def tags(query, set=nil)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      if set.nil?
+        get('actions/tags', {'query' => query})
+      else
+        is_valid_with_error(__method__, [:tag], set)
+        post('actions/tag', { 'query' => query, 'tags' => set })
+      end
+    end
+    
+    # Search Tags : Search for items based on tag value
+    # PassiveTotal uses three types of tags (user, global, and temporal) in order to provide context back to the user.
+    # query: A domain or IP address to query
+    def tags_search(query)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      get('actions/tags/search', {'query' => query})
+    end
+
     # PassiveTotal collects and provides SSL certificates as an enrichment point when possible. Beyond the certificate data itself, PassiveTotal keeps a record of the IP address of where the certificate was found and the time in which it was collected.
-    # query: An IP address or SHA-1 hash to query
-    def ssl_certificate(query)
-      is_valid_with_error(__method__, [:ipv4, :hash], query)
-      if ipv4?(query)
-        get("ssl_certificate/ip_address", query)
-      elsif hash?(query)
-        get("ssl_certificate/hash", query)
+    # query: A SHA-1 hash to query
+    def ssl_certificate_history(query)
+      is_valid_with_error(__method__, [:hash], query)
+      get('ssl-certificate/history', {'query' => query})
+    end
+
+    def ssl_certificate(query, field=nil)
+      if field.nil?
+        is_valid_with_error(__method__, [:hash], query)
+        get('ssl-certificate', {'query' => query})
+      else
+        is_valid_with_error(__method__, [:ssl_field], field)
+        get_params('ssl-certificate/search', { 'query' => query, 'field' => field })
+      end
+    end
+    
+    # PassiveTotal tracks some interesting metadata about a host
+    # query: a hostname
+    def components(query)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      get('host-attributes/components', {'query' => query})
+    end
+    
+    def trackers(query, type=nil)
+      if type.nil?
+        is_valid_with_error(__method__, [:ipv4, :domain], query)
+        if domain?(query)
+          query = normalize_domain(query)
+        end
+        get('host-attributes/trackers', {'query' => query})
+      else
+        is_valid_with_error(__method__, [:tracker_type], type)
+        get('trackers/search', {'query' => query, 'type' => type})
       end
     end
 
@@ -215,7 +338,7 @@ module PassiveTotal # :nodoc:
     
     # returns true if the given string matches a valid classification
     def classification?(c)
-      not ['targeted', 'crime', 'multiple', 'benign'].index(c).nil?
+      not ["malicious", "non-malicious", "suspicious", "unknown"].index(c).nil?
     end
     
     # returns true is the given object matches true or false
@@ -232,34 +355,56 @@ module PassiveTotal # :nodoc:
       false
     end
     
+    def ssl_field?(f)
+      return false if f.nil?
+      not ["issuerSurname", "subjectOrganizationName", "issuerCountry", "issuerOrganizationUnitName", 
+        "fingerprint", "subjectOrganizationUnitName", "serialNumber", "subjectEmailAddress", "subjectCountry", 
+        "issuerGivenName", "subjectCommonName", "issuerCommonName", "issuerStateOrProvinceName", "issuerProvince", 
+        "subjectStateOrProvinceName", "sha1", "sslVersion", "subjectStreetAddress", "subjectSerialNumber", 
+        "issuerOrganizationName", "subjectSurname", "subjectLocalityName", "issuerStreetAddress", 
+        "issuerLocalityName", "subjectGivenName", "subjectProvince", "issuerSerialNumber", "issuerEmailAddress"].index(f).nil?
+    end
+    
+    def whois_field?(f)
+      return false if f.nil?
+      not ["domain", "email", "name", "organization", "address", "phone", "nameserver"].index(f).nil?
+    end
+    
+    def tracker_type?(t)
+      return false if t.nil?
+      not ["YandexMetricaCounterId", "ClickyId", "GoogleAnalyticsAccountNumber", "NewRelicId", "MixpanelId", "GoogleAnalyticsTrackingId"].index(t).nil?
+    end
+    
     # lowercases and removes a trailing period (if one exists) from a domain name
     def normalize_domain(domain)
       return domain.downcase.gsub(/\.$/,'')
     end
 
     # helper function to perform an HTTP GET against the web API
-    def get(api, query)
-      params = { 'api_key' => @apikey, 'query' => query }
+    def get(api, params={})
+      url2json(:GET, "#{@endpoint}#{api}", params)
+    end
+ 
+    # helper function to perform an HTTP GET against the web API
+    def get_params(api, params)
       url2json(:GET, "#{@endpoint}#{api}", params)
     end
     
     # helper function to perform an HTTP POST against the web API
-    def post(api, query, set)
-      params = { 'api_key' => @apikey, 'query' => query, api => set }
+    def post(api, params)
       url2json(:POST, "#{@endpoint}#{api}", params)
     end
     
-    # helper function to perform an HTTP POST against the web API, but sets the parameter to 'tag' instead of the api name
-    def post_tag(api, query, set)
-      params = { 'api_key' => @apikey, 'query' => query, 'tag' => set }
-      url2json(:POST, "#{@endpoint}#{api}", params)
+    # helper function to perform an HTTP DELETE against the web API
+    def delete(api, params)
+      url2json(:DELETE, "#{@endpoint}#{api}", params)
     end
-
+    
     # main helper function to perform HTTP interactions with the web API.
     def url2json(method, url, params)
       if method == :GET
         url << "?" + params.map{|k,v| "#{k}=#{v}"}.join("&")
-      end      
+      end
 			url = URI.parse url
 			http = Net::HTTP.new(url.host, url.port)
 			http.use_ssl = (url.scheme == 'https')
@@ -268,10 +413,24 @@ module PassiveTotal # :nodoc:
       request = nil
       if method == :GET
         request = Net::HTTP::Get.new(url.request_uri)
-      else
+      elsif method == :POST
         request = Net::HTTP::Post.new(url.request_uri)
+        form_data = params.to_json
+        request.content_type = 'application/json'
+        request.body = form_data
+      elsif method == :DELETE
+        request = Net::HTTP::Delete.new(url.request_uri)
+        form_data = params.to_json
+        request.content_type = 'application/json'
+        request.body = form_data
+      elsif method == :HEAD
+        request = Net::HTTP::Head.new(url.request_uri)
+        request.set_form_data(params)
+      elsif method == :PUT
+        request = Net::HTTP::Put.new(url.request_uri)
         request.set_form_data(params)
       end
+      request.basic_auth(@username, @apikey)
       request.add_field("User-Agent", "Ruby/#{RUBY_VERSION} passivetotal rubygem v#{PassiveTotal::VERSION}")
 			t1 = Time.now
 			response = http.request(request)
@@ -280,9 +439,21 @@ module PassiveTotal # :nodoc:
       
       obj = Transaction.new(
         Query.new(method, params['query'], params[method] || params['tag'], url, params),
-        Response.new(response.body, data['success'], data['request_time'], data['raw_query'], data['error'], data['result_count'], data['results']),
+        Response.new(response.body, response.code == '200', data),
         delta
       )
+      
+      if data['error']
+        message = data['error']['message']
+        case message
+        when "API key provided does not match any user."
+          raise InvalidAPIKeyError.new(obj)
+        when "Quota has been exceeded!"
+          raise ExceededQuotaError.new(obj)
+        else
+          raise APIUsageError.new(obj)
+        end
+      end
 
       return obj
     end
@@ -302,6 +473,12 @@ module PassiveTotal # :nodoc:
           return true if tag?(item)
         elsif type == :bool
           return true if bool?(item)
+        elsif type == :ssl_field
+          return true if ssl_field?(item)
+        elsif type == :whois_field
+          return true if whois_field?(item)
+        elsif type == :tracker_type
+          return true if tracker_type?(item)
         end
       end
       return false
