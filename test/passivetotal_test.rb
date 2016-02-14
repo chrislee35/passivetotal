@@ -203,22 +203,15 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_tags
-    return
-    flunk("the API is returning a scalar instead of a list of tags...")
+    #flunk("the API is returning a scalar instead of a list of tags...")
     res = @pt.tags('www.chrisleephd.us').response.results
     field_tester(res, ['tags'])
     assert_equal([], res['tags'])
     tran = @pt.add_tag('www.chrisleephd.us', 'cool')
-    res = tran.response.results
-    pp tran
-    field_tester(res, ['tags'])
-    assert_equal(['cool'], res['tags'])
     res = @pt.tags('www.chrisleephd.us').response.results
     field_tester(res, ['tags'])
     assert_equal(['cool'], res['tags'])
     res = @pt.remove_tag('www.chrisleephd.us', 'cool').response.results
-    field_tester(res, ['tags'])
-    assert_equal([], res['tags'])
     res = @pt.tags('www.chrisleephd.us').response.results
     field_tester(res, ['tags'])
     assert_equal([], res['tags'])
