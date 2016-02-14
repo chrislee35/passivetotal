@@ -248,7 +248,7 @@ class PassivetotalTest < Minitest::Test
   
   def test_ever_compromised
     return
-    flunk("the API won't let me set the ever-compromised flag")
+    #flunk("the API won't let me set the ever-compromised flag")
     res = @pt.ever_compromised('107.170.89.121').response.results
     field_tester(res, ['everCompromised'])
     assert_equal(false, res['everCompromised'])
@@ -304,9 +304,30 @@ class PassivetotalTest < Minitest::Test
     assert_equal(false, res['monitor'])
   end
   
-  def test_ssl
+  def test_boolean_error
     return
-    flunk("ssl_certificate requests by SHA1 and other fields differ in format in returned records")
+    res = @pt.ever_compromised('107.170.89.121').response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121', true).response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121').response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121', "true").response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121').response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121', false).response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121').response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121', "false").response.results
+    pp res['everCompromised']
+    res = @pt.ever_compromised('107.170.89.121').response.results
+    pp res['everCompromised']
+  end
+  
+  def test_ssl_by_serial
+    return
     api_example = {"serialNumber"=>"2317683628587350290823564500811277499",
      "issuerStreetAddress"=>nil,
      "subjectOrganizationUnitName"=>nil,
@@ -340,20 +361,49 @@ class PassivetotalTest < Minitest::Test
     fields = api_example.keys
     tran = @pt.ssl_certificate('2317683628587350290823564500811277499', 'serialNumber')
     res = tran.response.results
-    pp tran
 
     field_tester(res, ['results'])
     res['results'].each do |rec|
       field_tester(rec, fields)
     end
+  end
+  
+  def test_ssl_by_hash
+    return
+    api_example = {"serialNumber"=>"2317683628587350290823564500811277499",
+     "issuerStreetAddress"=>nil,
+     "subjectOrganizationUnitName"=>nil,
+     "subjectOrganizationName"=>nil,
+     "subjectSerialNumber"=>nil,
+     "subjectEmailAddress"=>nil,
+     "expirationDate"=>"Apr 27 23:59:59 2017 GMT",
+     "fingerprint"=>"e9:a6:64:7d:6a:ba:52:dc:47:b3:83:8c:92:0c:9e:e5:9b:ad:70:34",
+     "issuerSerialNumber"=>nil,
+     "issuerLocalityName"=>nil,
+     "issuerGivenName"=>nil,
+     "issuerOrganizationName"=>"thawte, inc.",
+     "issuerCountry"=>"us",
+     "subjectCommonName"=>"www.passivetotal.org",
+     "sha1"=>"e9a6647d6aba52dc47b3838c920c9ee59bad7034",
+     "sslVersion"=>"2",
+     "subjectSurname"=>nil,
+     "subjectStateOrProvinceName"=>nil,
+     "subjectCountry"=>nil,
+     "issuerSurname"=>nil,
+     "subjectGivenName"=>nil,
+     "issuerProvince"=>nil,
+     "issuerOrganizationUnitName"=>"domain validated ssl",
+     "subjectProvince"=>nil,
+     "subjectLocalityName"=>nil,
+     "subjectStreetAddress"=>nil,
+     "issuerStateOrProvinceName"=>nil,
+     "issuerCommonName"=>"thawte dv ssl ca - g2",
+     "issueDate"=>"Apr 28 00:00:00 2015 GMT",
+     "issuerEmailAddress"=>nil}
+    fields = api_example.keys
 
     res = @pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034').response.results
-    pp res
-    field_tester(res, ['results'])
-    res['results'].each do |rec|
-      field_tester(rec, fields)
-    end
-
+    field_tester(res, fields)
     assert_raises(ArgumentError) do
       res = @pt.ssl_certificate("x9a6647d6aba52dc47b3838c920c9ee59bad7034")
     end
