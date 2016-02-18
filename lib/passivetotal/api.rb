@@ -158,7 +158,7 @@ module PassiveTotal # :nodoc:
     def add_tag(query, tag)
       is_valid_with_error(__method__, [:ipv4, :domain], query)
       is_valid_with_error(__method__, [:tag], tag)
-      post('actions/tags', { 'query' => query, 'tags' => tag })
+      post('actions/tags', { 'query' => query, 'tags' => [tag] })
     end
     
     # Remove a user-tag to an IP or domain
@@ -167,7 +167,7 @@ module PassiveTotal # :nodoc:
     def remove_tag(query, tag)
       is_valid_with_error(__method__, [:ipv4, :domain], query)
       is_valid_with_error(__method__, [:tag], tag)
-      delete('actions/tags', { 'query' => query, 'tags' => tag })
+      delete('actions/tags', { 'query' => query, 'tags' => [tag] })
     end
     
     # PassiveTotal uses the notion of classifications to highlight table rows a certain color based on how they have been rated.
@@ -268,7 +268,7 @@ module PassiveTotal # :nodoc:
         get('actions/tags', {'query' => query})
       else
         is_valid_with_error(__method__, [:tag], set)
-        post('actions/tag', { 'query' => query, 'tags' => set })
+        post('actions/tag', { 'query' => query, 'tags' => [set] })
       end
     end
     

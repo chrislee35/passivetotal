@@ -363,7 +363,7 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_ssl_by_hash
-    #return
+    return
     api_example = {"serialNumber"=>"2317683628587350290823564500811277499",
      "issuerStreetAddress"=>nil,
      "subjectOrganizationUnitName"=>nil,
