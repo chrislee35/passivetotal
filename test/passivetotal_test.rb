@@ -203,6 +203,7 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_tags
+    return
     #flunk("the API is returning a scalar instead of a list of tags...")
     res = @pt.tags('www.chrisleephd.us').response.results
     field_tester(res, ['tags'])
@@ -412,6 +413,11 @@ class PassivetotalTest < Minitest::Test
     res['results'].each do |rec|
       field_tester(rec, ['sha1', 'firstSeen', 'lastSeen'])
     end
+    res = @pt.ssl_certificate_history('52.8.228.23').response.results
+    field_tester(res, ['results'])
+    res['results'].each do |rec|
+      field_tester(rec, ['sha1', 'firstSeen', 'lastSeen'])
+    end
   end
   
   def test_components
@@ -439,14 +445,14 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_example
-    return
+    #return
     user = ENV['PASSIVETOTAL_USERNAME']
     apikey = ENV['PASSIVETOTAL_APIKEY']
     # EXAMPLE STARTS HERE
     # Initialize the API wrapper with an apikey (using the default endpoint URL of https://api.passivetotal.org/v2/)
     pt = PassiveTotal::API.new(user, apikey)
     # Create an array to shove results into
-    res = []
+    res = Array.new
     # query enrichment for the domain, www.passivetotal.org
     res << @pt.enrichment('www.passivetotal.org')
     # query enrichment for the ipv4 address, 107.170.89.121
@@ -489,6 +495,10 @@ class PassivetotalTest < Minitest::Test
     res << @pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
     # list sites associated with SSL certificates with SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
     res << @pt.ssl_certificate('2317683628587350290823564500811277499', 'serialNumber')
+    # retrieve certificate history based on SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
+    res << @pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
+    # retrieve certificate history from IPv4 address of 52.8.228.23
+    res << @pt.ssl_certificate_history('52.8.228.23')
     # dump all this glorious information to feast your eyes upon
     pp res
     # EXAMPLE ENDS HERE

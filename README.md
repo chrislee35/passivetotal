@@ -45,26 +45,26 @@ Included in the gem is a command-line tool, passivetotal, with the following usa
 
 ## Usage
 
-    # Initialize the API wrapper with an apikey (using the default endpoint URL of https://www.passivetotal.org/api/v1/)
-    pt = PassiveTotal::API.new(apikey)
+    # Initialize the API wrapper with an apikey (using the default endpoint URL of https://api.passivetotal.org/v2/)
+    pt = PassiveTotal::API.new(user, apikey)
     # Create an array to shove results into
-    res = []
-    # query metadata for the domain, www.passivetotal.org
-    res << @pt.metadata('www.passivetotal.org')
-    # query metadata for the ipv4 address, 107.170.89.121
-    res << @pt.metadata('107.170.89.121')
+    res = Array.new
+    # query enrichment for the domain, www.passivetotal.org
+    res << @pt.enrichment('www.passivetotal.org')
+    # query enrichment for the ipv4 address, 107.170.89.121
+    res << @pt.enrichment('107.170.89.121')
     # query passive DNS results for the domain, www.passivetotal.org
     res << @pt.passive('www.passivetotal.org')
     # query passive DNS results for the ipv4 address, 107.170.89.121
     res << @pt.passive('107.170.89.121')
     # query for subdomains of passivetotal.org
-    res << @pt.subdomains('passivetotal.org')
+    #res << @pt.subdomains('passivetotal.org')
     # query for unique IPv4 resolutions of passivetotal.org
     res << @pt.unique('passivetotal.org')
     # query for the classification of www.passivetotal.org
     res << @pt.classification('www.passivetotal.org')
     # set the classification of www.passivetotal.org as benign
-    res << @pt.classification('www.passivetotal.org', 'benign')
+    res << @pt.classification('www.passivetotal.org', 'non-malicious')
     # query for the tags associated with www.chrisleephd.us
     res << @pt.tags('www.chrisleephd.us')
     # add the "cool" tag to www.chrisleephd.us
@@ -84,13 +84,17 @@ Included in the gem is a command-line tool, passivetotal, with the following usa
     # flag www.passivetotal.org as not a dynamic dns domain/host
     res << @pt.dynamic('www.passivetotal.org', false)
     # check if www.passivetotal.org is being watched
-    res << @pt.watching('www.passivetotal.org')
+    res << @pt.monitor('www.passivetotal.org')
     # unwatch www.passivetotal.org
-    res << @pt.watching('www.passivetotal.org', false)
-    # list SSL certificates associated with IPV4 address 104.131.121.205
-    res << @pt.ssl_certificate('104.131.121.205')
+    res << @pt.monitor('www.passivetotal.org', false)
     # list sites associated with SSL certificates with SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
     res << @pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
+    # list sites associated with SSL certificates with SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
+    res << @pt.ssl_certificate('2317683628587350290823564500811277499', 'serialNumber')
+    # retrieve certificate history based on SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
+    res << @pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
+    # retrieve certificate history from IPv4 address of 52.8.228.23
+    res << @pt.ssl_certificate_history('52.8.228.23')
     # dump all this glorious information to feast your eyes upon
     pp res
 

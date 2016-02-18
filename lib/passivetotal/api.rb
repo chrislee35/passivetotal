@@ -285,7 +285,7 @@ module PassiveTotal # :nodoc:
     # PassiveTotal collects and provides SSL certificates as an enrichment point when possible. Beyond the certificate data itself, PassiveTotal keeps a record of the IP address of where the certificate was found and the time in which it was collected.
     # query: A SHA-1 hash to query
     def ssl_certificate_history(query)
-      is_valid_with_error(__method__, [:hash], query)
+      is_valid_with_error(__method__, [:ipv4, :hash], query)
       get('ssl-certificate/history', {'query' => query})
     end
 
