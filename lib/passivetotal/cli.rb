@@ -20,6 +20,7 @@ module PassiveTotal # :nodoc:
       opts = GetoptLong.new(
       	[ '--help', '-h', GetoptLong::NO_ARGUMENT ],
       	[ '--debug', '-v', GetoptLong::NO_ARGUMENT ],
+        [ '--username', '-u', GetoptLong::REQUIRED_ARGUMENT ],
         [ '--apikey', '-k', GetoptLong::REQUIRED_ARGUMENT ],
       	[ '--metadata', '-m', GetoptLong::REQUIRED_ARGUMENT ],
       	[ '--passive', '-p', GetoptLong::REQUIRED_ARGUMENT ],
@@ -31,6 +32,9 @@ module PassiveTotal # :nodoc:
       	[ '--dynamic', '-d', GetoptLong::REQUIRED_ARGUMENT ],
       	[ '--watching', '-w', GetoptLong::REQUIRED_ARGUMENT ],
       	[ '--sslcertificate', '-l', GetoptLong::REQUIRED_ARGUMENT ],
+        [ '--ssl_history', '-H', GetoptLong::REQUIRED_ARGUMENT ],
+        [ '--trackers', '-T', GetoptLong::REQUIRED_ARGUMENT ],
+        [ '--osint', '-o', GetoptLong::REQUIRED_ARGUMENT ],
         [ '--set', '-i', GetoptLong::REQUIRED_ARGUMENT ]
       )
       
@@ -39,7 +43,8 @@ module PassiveTotal # :nodoc:
         :query => nil,
         :set => nil,
         :debug => false,
-        :apikey => ENV['PASSIVETOTAL_APIKEY']
+        :apikey => ENV['PASSIVETOTAL_APIKEY'],
+        :username => ENV['PASSIVETOTAL_USERNAME']
       }
 
       opts.each do |opt, arg|
@@ -48,6 +53,8 @@ module PassiveTotal # :nodoc:
           options[:method] = :usage
         when '--debug'
           options[:debug] = true
+        when '--username'
+          options[:username] = arg
         when '--apikey'
           options[:apikey] = arg
         when '--metadata'
@@ -80,6 +87,15 @@ module PassiveTotal # :nodoc:
         when '--sslcertificate'
           options[:method] = :ssl_certificate
           options[:query] = arg
+        when '--ssl_history'
+          options[:method] = :ssl_certificate_history
+          options[:query] = arg
+        when '--trackers'
+          options[:method] = :trackers
+          options[:query] = arg
+        when '--osint'
+          options[:method] = :osint
+          options[:query] = arg
         when '--set'
           options[:set] = arg.dup
         else
@@ -100,11 +116,12 @@ module PassiveTotal # :nodoc:
 
       if options[:debug]
         $stderr.puts "PassiveTotal CLI Options"
-        $stderr.puts "  apikey: #{options[:apikey]}"
-        $stderr.puts "  debug:  #{options[:debug]}"
-        $stderr.puts "  method: #{options[:method]}"
-        $stderr.puts "  query:  #{options[:query]}"
-        $stderr.puts "  set:    #{options[:set]}"
+        $stderr.puts "  username: #{options[:username]}"
+        $stderr.puts "    apikey: #{options[:apikey]}"
+        $stderr.puts "     debug: #{options[:debug]}"
+        $stderr.puts "    method: #{options[:method]}"
+        $stderr.puts "     query: #{options[:query]}"
+        $stderr.puts "       set: #{options[:set]}"
       end
       
       return options
@@ -112,9 +129,10 @@ module PassiveTotal # :nodoc:
     
     # returns a string containing the usage information
     def self.usage
-      help_text = "Usage: #{$0} [-h] [-v] [-k <apikey>] [[-m|-p|-c|-t|-e|-w] <ip or dom>] [[-s|-d] <dom>] [-x <ip>] [-l <ip or hash>] [-i <value>]\n"
+      help_text = "Usage: #{$0} [-v] [-u <username>] [-k <apikey>] <action flag> <query> [-i <value>]\n"
       help_text << "-h                Help\n"
       help_text << "-v                Verbose output\n"
+      help_text << "-u <username>     Sets the Username, defaults to the environment variable PASSIVETOTAL_USERNAME\n"
       help_text << "-k <apikey>       Sets the APIKEY, defaults to the environment variable PASSIVETOTAL_APIKEY\n"
       help_text << "ACTIONS (You have to select one, last one wins)"
       help_text << "  -m <ip or dom>  Queries metadata for given IP or domain\n"
@@ -127,11 +145,14 @@ module PassiveTotal # :nodoc:
       help_text << "  -s <dom>        Queries the subdomains for a given domain\n"
       help_text << "  -d <dom>        Queries (or sets) if a domain is a dynamic DNS domain\n"
       help_text << "  -x <ip>         Queries (or sets) if a given IP is a sinkhole\n"
-      help_text << "  -l <ip or hash> Queries for SSL Certificates/IP addresses associated with a given IP or SHA-1 hash\n"
+      help_text << "  -l <hash> Queries for SSL certificates/IP addresses associated with a given SHA-1 hash\n"
+      help_text << "  -H <ip or hash> Queries for SSL certificate history associated with a given IP or SHA-1 hash\n"
+      help_text << "  -T <ip or dom>  Queries for Tracker information associated with a given IP or domain\n"
+      help_text << "  -o <ip or dom>  Queries for OSINT on a given IP or domain\n"
       help_text << "SETTING VALUES"
       help_text << "  -i <value>      Sets the value, used in conjuntion with -c, -t, -e, -w, -d, or -x\n"
       help_text << "                  Valid values for -i depend on what it's used with:\n"
-      help_text << "                  -c : targeted, crime, multiple, benign\n"
+      help_text << "                  -c : malicious, non-malicious, suspicious, unknown\n"
       help_text << "                  -t : <a tag name consisting of characters: [a-zA-Z_]>\n"
       help_text << "                  -e, -w, -d, -x: true, false\n"
       help_text
@@ -141,14 +162,14 @@ module PassiveTotal # :nodoc:
     def self.run(args)
       options = parse_command_line(args)
       return usage() if options[:method] == :usage
-      pt = PassiveTotal::API.new(options[:apikey])
+      pt = PassiveTotal::API.new(options[:username], options[:apikey])
       if pt.respond_to?(options[:method])
         if options[:set]
           data = pt.send(options[:method], options[:query], options[:set])
         else
           data = pt.send(options[:method], options[:query])
         end
-        data.response.results['response_time'] = data.query.response_time
+        data.response.results['response_time'] = data.response_time
         return JSON.pretty_generate(data.response.results)
       end
       return ''

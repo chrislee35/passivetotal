@@ -239,6 +239,7 @@ module PassiveTotal # :nodoc:
     
     # monitoring is an alias for monitor
     alias_method :monitoring, :monitor
+    alias_method :watching, :monitor
 
     # PassiveTotal allows users to notate if an IP address is a known sinkhole. These values are shared globally with everyone in the platform.
     # PassiveTotal::API#sinkhole() queries if only one argument is given, and sets if both are given

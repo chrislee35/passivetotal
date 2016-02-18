@@ -22,9 +22,10 @@ Or install it yourself as:
 
 Included in the gem is a command-line tool, passivetotal, with the following usage:
 
-	Usage: passivetotal [-h] [-v] [-k <apikey>] [[-m|-p|-c|-t|-e|-w] <ip or dom>] [[-s|-d] <dom>] [-x <ip>] [-l <ip or hash>] [-i <value>]
+	Usage: bin/passivetotal [-v] [-u <username>] [-k <apikey>] <action flag> <query> [-i <value>]
 	-h                Help
 	-v                Verbose output
+	-u <username>     Sets the Username, defaults to the environment variable PASSIVETOTAL_USERNAME
 	-k <apikey>       Sets the APIKEY, defaults to the environment variable PASSIVETOTAL_APIKEY
 	ACTIONS (You have to select one, last one wins)  -m <ip or dom>  Queries metadata for given IP or domain
 	  -p <ip or dom>  Queries passive DNS data for given IP or domain
@@ -36,13 +37,15 @@ Included in the gem is a command-line tool, passivetotal, with the following usa
 	  -s <dom>        Queries the subdomains for a given domain
 	  -d <dom>        Queries (or sets) if a domain is a dynamic DNS domain
 	  -x <ip>         Queries (or sets) if a given IP is a sinkhole
-	  -l <ip or hash> Queries for SSL Certificates/IP addresses associated with a given IP or SHA-1 hash
+	  -l <hash> Queries for SSL certificates/IP addresses associated with a given SHA-1 hash
+	  -H <ip or hash> Queries for SSL certificate history associated with a given IP or SHA-1 hash
+	  -T <ip or dom>  Queries for Tracker information associated with a given IP or domain
+	  -o <ip or dom>  Queries for OSINT on a given IP or domain
 	SETTING VALUES  -i <value>      Sets the value, used in conjuntion with -c, -t, -e, -w, -d, or -x
 	                  Valid values for -i depend on what it's used with:
-	                  -c : targeted, crime, multiple, benign
+	                  -c : malicious, non-malicious, suspicious, unknown
 	                  -t : <a tag name consisting of characters: [a-zA-Z_]>
 	                  -e, -w, -d, -x: true, false
-
 ## Usage
 
     # Initialize the API wrapper with an apikey (using the default endpoint URL of https://api.passivetotal.org/v2/)
