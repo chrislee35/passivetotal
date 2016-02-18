@@ -330,7 +330,17 @@ module PassiveTotal # :nodoc:
         get('trackers/search', {'query' => query, 'type' => type})
       end
     end
-
+    
+    # malware: get sample information based from domain
+    # query: ip or domain
+    def malware(query)
+      is_valid_with_error(__method__, [:ipv4, :domain], query)
+      if domain?(query)
+        query = normalize_domain(query)
+      end
+      get('enrichment/malware', {'query' => query})
+    end
+ 
     private
     
     # returns true if the given string is a dotted quad IPv4 address

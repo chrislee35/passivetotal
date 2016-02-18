@@ -35,6 +35,7 @@ module PassiveTotal # :nodoc:
         [ '--ssl_history', '-H', GetoptLong::REQUIRED_ARGUMENT ],
         [ '--trackers', '-T', GetoptLong::REQUIRED_ARGUMENT ],
         [ '--osint', '-o', GetoptLong::REQUIRED_ARGUMENT ],
+        [ '--malware', '-M', GetoptLong::REQUIRED_ARGUMENT ],
         [ '--set', '-i', GetoptLong::REQUIRED_ARGUMENT ]
       )
       
@@ -96,6 +97,9 @@ module PassiveTotal # :nodoc:
         when '--osint'
           options[:method] = :osint
           options[:query] = arg
+        when '--malware'
+          options[:method] = :malware
+          options[:query] = arg
         when '--set'
           options[:set] = arg.dup
         else
@@ -149,6 +153,7 @@ module PassiveTotal # :nodoc:
       help_text << "  -H <ip or hash> Queries for SSL certificate history associated with a given IP or SHA-1 hash\n"
       help_text << "  -T <ip or dom>  Queries for Tracker information associated with a given IP or domain\n"
       help_text << "  -o <ip or dom>  Queries for OSINT on a given IP or domain\n"
+      help_text << "  -M <ip or dom>  Queries for Malware sample records for a given IP or domain\n"
       help_text << "SETTING VALUES"
       help_text << "  -i <value>      Sets the value, used in conjuntion with -c, -t, -e, -w, -d, or -x\n"
       help_text << "                  Valid values for -i depend on what it's used with:\n"

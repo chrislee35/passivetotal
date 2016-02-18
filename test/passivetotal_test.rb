@@ -187,9 +187,23 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_subdomains
-    #return
+    return
     res = @pt.subdomains("*.passivetotal.org").response.results
     field_tester(res, ['queryValue', 'subdomains'])
+  end
+  
+  def test_malware
+    return
+    res = @pt.malware("noorno.com").response.results
+    field_tester(res, ['results'])
+    res['results'].each do |rec|
+      field_tester(rec, ['source', 'sourceUrl', 'sample', 'collectionDate'])
+    end
+    res = @pt.malware("98.124.243.47").response.results
+    field_tester(res, ['results'])
+    res['results'].each do |rec|
+      field_tester(rec, ['source', 'sourceUrl', 'sample', 'collectionDate'])
+    end
   end
   
   def test_classification
@@ -499,6 +513,10 @@ class PassivetotalTest < Minitest::Test
     res << @pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
     # retrieve certificate history from IPv4 address of 52.8.228.23
     res << @pt.ssl_certificate_history('52.8.228.23')
+    # query for malware sample records by the domain "noorno.com"
+    res << @pt.malware("noorno.com")
+    # query for malware sample records by the ip addres 98.124.243.47
+    res << @pt.malware("98.124.243.47")
     # dump all this glorious information to feast your eyes upon
     pp res
     # EXAMPLE ENDS HERE

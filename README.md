@@ -41,11 +41,13 @@ Included in the gem is a command-line tool, passivetotal, with the following usa
 	  -H <ip or hash> Queries for SSL certificate history associated with a given IP or SHA-1 hash
 	  -T <ip or dom>  Queries for Tracker information associated with a given IP or domain
 	  -o <ip or dom>  Queries for OSINT on a given IP or domain
+	  -M <ip or dom>  Queries for Malware sample records for a given IP or domain
 	SETTING VALUES  -i <value>      Sets the value, used in conjuntion with -c, -t, -e, -w, -d, or -x
 	                  Valid values for -i depend on what it's used with:
 	                  -c : malicious, non-malicious, suspicious, unknown
 	                  -t : <a tag name consisting of characters: [a-zA-Z_]>
 	                  -e, -w, -d, -x: true, false
+
 ## Usage
 
     # Initialize the API wrapper with an apikey (using the default endpoint URL of https://api.passivetotal.org/v2/)
@@ -98,6 +100,10 @@ Included in the gem is a command-line tool, passivetotal, with the following usa
     res << @pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
     # retrieve certificate history from IPv4 address of 52.8.228.23
     res << @pt.ssl_certificate_history('52.8.228.23')
+    # query for malware sample records by the domain "noorno.com"
+    res << @pt.malware("noorno.com")
+    # query for malware sample records by the ip addres 98.124.243.47
+    res << @pt.malware("98.124.243.47")
     # dump all this glorious information to feast your eyes upon
     pp res
 
