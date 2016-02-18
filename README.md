@@ -61,7 +61,7 @@ Included in the gem is a command-line tool, passivetotal, with the following usa
     # query passive DNS results for the ipv4 address, 107.170.89.121
     res << @pt.passive('107.170.89.121')
     # query for subdomains of passivetotal.org
-    #res << @pt.subdomains('passivetotal.org')
+    res << @pt.subdomains('*.passivetotal.org')
     # query for unique IPv4 resolutions of passivetotal.org
     res << @pt.unique('passivetotal.org')
     # query for the classification of www.passivetotal.org
