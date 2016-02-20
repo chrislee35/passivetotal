@@ -467,32 +467,59 @@ class PassivetotalTest < Minitest::Test
     pt = PassiveTotal::API.new(user, apikey)
     # Create an array to shove results into
     res = Array.new
-    # query enrichment for the domain, www.passivetotal.org
-    res << @pt.enrichment('www.passivetotal.org')
-    # query enrichment for the ipv4 address, 107.170.89.121
-    res << @pt.enrichment('107.170.89.121')
+    # ACCOUNT API
+    # Get account details your account.
+    res << @pt.account
+    # Get history associated with your account.
+    res << @pt.history
+    # Get notifications that have been posted to your account.
+    res << @pt.notifications
+    # Get details about the organization your account is associated with.
+    res << @pt.organization
+    # Get the teamstream for the organization your account is associated with.
+    res << @pt.teamstream
+    # Get source details for a specific source.
+    res << @pt.sources('riskiq')
+    
+    # DNS API
     # query passive DNS results for the domain, www.passivetotal.org
     res << @pt.passive('www.passivetotal.org')
     # query passive DNS results for the ipv4 address, 107.170.89.121
     res << @pt.passive('107.170.89.121')
-    # query for subdomains of passivetotal.org
-    res << @pt.subdomains('*.passivetotal.org')
     # query for unique IPv4 resolutions of passivetotal.org
     res << @pt.unique('passivetotal.org')
-    # query for the classification of www.passivetotal.org
-    res << @pt.classification('www.passivetotal.org')
-    # set the classification of www.passivetotal.org as benign
-    res << @pt.classification('www.passivetotal.org', 'non-malicious')
+    
+    # ENRICHMENT API
+    # query enrichment for the domain, www.passivetotal.org
+    res << @pt.enrichment('www.passivetotal.org')
+    # query enrichment for the ipv4 address, 107.170.89.121
+    res << @pt.enrichment('107.170.89.121')
+    # Get malware data
+    res << @pt.malware('noorno.com')
+    # query for malware sample records by the ip addres 98.124.243.47
+    res << @pt.malware("98.124.243.47")
+    # Get opensource intelligence data
+    res << @pt.osint("xxxmobiletubez.com")
+    # query for subdomains of passivetotal.org
+    res << @pt.subdomains('*.passivetotal.org')
+    
+    # WHOIS API
+    # Get WHOIS data for a domain or IP address
+    res << @pt.whois("passivetotal.org")
+    # Get WHOIS records based on field matching queries.
+    res << @pt.whois("proxy4655031@1and1-private-registration.com", "email")
+    
+    # ACTIONS API
     # query for the tags associated with www.chrisleephd.us
     res << @pt.tags('www.chrisleephd.us')
     # add the "cool" tag to www.chrisleephd.us
     res << @pt.add_tag('www.chrisleephd.us', 'cool')
     # remove the "cool" tag from www.chrisleephd.us (aww, I was cool for a few milliseconds :( )
-    res << @pt.remove_tag('www.chrisleephd.us', 'cool')
-    # query if 107.170.89.121 is a sinkhole
-    res << @pt.sinkhole('107.170.89.121')
-    # set 107.170.89.121 as not a sinkhole
-    res << @pt.sinkhole('107.170.89.121', false)
+    res << @pt.remove_tag('www.chrisleephd.us', 'cool')    
+    # query for the classification of www.passivetotal.org
+    res << @pt.classification('www.passivetotal.org')
+    # set the classification of www.passivetotal.org as benign
+    res << @pt.classification('www.passivetotal.org', 'non-malicious')
     # query if www.passivetotal.org has ever been listed as compromised
     res << @pt.ever_compromised('www.passivetotal.org')
     # set the ever_compromised flag for www.passivetotal.org to false to indicate that it was never compromised or that it is in sole control of a malicious actor.
@@ -505,6 +532,20 @@ class PassivetotalTest < Minitest::Test
     res << @pt.monitor('www.passivetotal.org')
     # unwatch www.passivetotal.org
     res << @pt.monitor('www.passivetotal.org', false)
+    # query if 107.170.89.121 is a sinkhole
+    res << @pt.sinkhole('107.170.89.121')
+    # set 107.170.89.121 as not a sinkhole
+    res << @pt.sinkhole('107.170.89.121', false)
+    
+    # HOST API
+    # Get detailed information about a host
+    res << @pt.components('passivetotal.org')
+    # Get all tracking codes for a domain or IP address.
+    res << @pt.trackers('passivetotal.org')
+    # Get hosts matching a specific tracker ID
+    res << @pt.trackers('UA-49901229', 'GoogleAnalyticsAccountNumber')
+    
+    # SSL API
     # list sites associated with SSL certificates with SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
     res << @pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
     # list sites associated with SSL certificates with SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
@@ -513,10 +554,7 @@ class PassivetotalTest < Minitest::Test
     res << @pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
     # retrieve certificate history from IPv4 address of 52.8.228.23
     res << @pt.ssl_certificate_history('52.8.228.23')
-    # query for malware sample records by the domain "noorno.com"
-    res << @pt.malware("noorno.com")
-    # query for malware sample records by the ip addres 98.124.243.47
-    res << @pt.malware("98.124.243.47")
+
     # dump all this glorious information to feast your eyes upon
     pp res
     # EXAMPLE ENDS HERE
