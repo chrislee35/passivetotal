@@ -216,6 +216,16 @@ class PassivetotalTest < Minitest::Test
     assert_equal({"queryValue"=>"www.passivetotal.org", "classification"=>"non_malicious"}, res)
   end
   
+  def test_bulk_classification
+    tran = @pt.bulk_classification(["passivetotal.org", "www.passivetotal.org"])
+    res = tran.response.results
+    field_tester(res, ['results'])
+    field_tester(res['results'], ["passivetotal.org", "www.passivetotal.org"])
+    field_tester(res['results']["passivetotal.org"], ['classification'])
+    field_tester(res['results']["www.passivetotal.org"], ['classification'])
+    assert_equal('non_malicious', res['results']["passivetotal.org"]['classification'])
+  end  
+    
   def test_tags
     return
     #flunk("the API is returning a scalar instead of a list of tags...")

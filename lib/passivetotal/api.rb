@@ -176,7 +176,7 @@ module PassiveTotal # :nodoc:
     def classification(query, set=nil)
       is_valid_with_error(__method__, [:ipv4, :domain], query)
       if domain?(query)
-        query = normalize_domain(query)
+        query = normalize_domain(q)
       end
       if set.nil?
         get('actions/classification', {'query' => query})
@@ -184,6 +184,22 @@ module PassiveTotal # :nodoc:
         is_valid_with_error(__method__.to_s, [:classification], set)
         post('actions/classification', { 'query' => query, 'classification' => set })
       end
+    end
+    
+    # Get the classification for a query in bulk
+    # query: An array of domains or IP address to query
+    def bulk_classification(query)
+      if query.class != Array
+        query = [query]
+      end
+      query.map do |q|
+        is_valid_with_error(__method__, [:ipv4, :domain], q)
+        if domain?(q)
+          q = normalize_domain(q)
+        end
+        q
+      end
+      get_with_data('actions/bulk/classification', { 'query' => query })
     end
     
     # PassiveTotal allows users to notate if a domain or IP address have ever been compromised. These values aid in letting users know that a site may be benign, but it was used in an attack at some point in time.
@@ -421,6 +437,10 @@ module PassiveTotal # :nodoc:
       url2json(:GET, "#{@endpoint}#{api}", params)
     end
     
+    def get_with_data(api, params={})
+      url2json(:GET_DATA, "#{@endpoint}#{api}", params)
+    end
+    
     # helper function to perform an HTTP POST against the web API
     def post(api, params)
       url2json(:POST, "#{@endpoint}#{api}", params)
@@ -444,6 +464,11 @@ module PassiveTotal # :nodoc:
       request = nil
       if method == :GET
         request = Net::HTTP::Get.new(url.request_uri)
+      elsif method == :GET_DATA
+        request = Net::HTTP::Get.new(url.request_uri)
+        form_data = params.to_json
+        request.content_type = 'application/json'
+        request.body = form_data
       elsif method == :POST
         request = Net::HTTP::Post.new(url.request_uri)
         form_data = params.to_json
