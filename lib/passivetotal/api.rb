@@ -119,6 +119,22 @@ module PassiveTotal # :nodoc:
     # metadata is an alias for enrichment
     alias_method :metadata, :enrichment
     
+    # Enrichment bulk : Enrich each of the given queries with metadata
+    # query: An array of domains or IP addresses to query
+    def bulk_enrichment(query)
+      if query.class != Array
+        query = [query]
+      end
+      query.map do |q|
+        is_valid_with_error(__method__, [:ipv4, :domain], q)
+        if domain?(q)
+          q = normalize_domain(q)
+        end
+        q
+      end
+      get_with_data('enrichment/bulk', { 'query' => query })
+    end
+
     # osint: Get opensource intelligence data
     # query: A domain or IP address to query
     def osint(query)
@@ -129,6 +145,22 @@ module PassiveTotal # :nodoc:
       get('enrichment/osint', {'query' => query})
     end
     
+    # osint bulk : Enrich each of the given queries with metadata
+    # query: An array of domains or IP addresses to query
+    def bulk_osint(query)
+      if query.class != Array
+        query = [query]
+      end
+      query.map do |q|
+        is_valid_with_error(__method__, [:ipv4, :domain], q)
+        if domain?(q)
+          q = normalize_domain(q)
+        end
+        q
+      end
+      get_with_data('enrichment/bulk/osint', { 'query' => query })
+    end
+
     # subdomains: Get subdomains using a wildcard query
     # query: A domain with wildcard, e.g., *.passivetotal.org
     def subdomains(query)
@@ -356,6 +388,23 @@ module PassiveTotal # :nodoc:
       end
       get('enrichment/malware', {'query' => query})
     end
+    
+    # malware bulk: get sample information based from domains
+    # query: An array of domains or IP addresses to query
+    def bulk_malware(query)
+      if query.class != Array
+        query = [query]
+      end
+      query.map do |q|
+        is_valid_with_error(__method__, [:ipv4, :domain], q)
+        if domain?(q)
+          q = normalize_domain(q)
+        end
+        q
+      end
+      get_with_data('enrichment/bulk/malware', { 'query' => query })
+    end
+    
  
     private
     

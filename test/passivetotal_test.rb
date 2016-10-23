@@ -156,12 +156,31 @@ class PassivetotalTest < Minitest::Test
     end
   end
   
+  def test_bulk_enrichment
+    tran = @pt.bulk_enrichment(['www.passivetotal.org','52.8.228.23'])
+    res = tran.response.results
+    field_tester(res, ['results'])
+    field_tester(res['results'], ['www.passivetotal.org','52.8.228.23'])
+    field_tester(res['results']['www.passivetotal.org'], ['primaryDomain', 'tags', 'dynamicDns', 'queryValue', 'subdomains', 'tld', 'everCompromised','queryType'])
+    field_tester(res['results']['52.8.228.23'], ['network', 'autonomousSystemName', 'tags', 'country', 'sinkhole', 'latitude', 'longitude', 'everCompromised', 'queryType', 'autonomousSystemNumber'])
+  end
+  
   def test_osint
     return
     res = @pt.osint("xxxmobiletubez.com").response.results
     field_tester(res, ['results'])
     res['results'].each do |rec|
       field_tester(rec, ['source', 'sourceUrl', 'inReport', 'tags'])
+    end
+  end
+  
+  def test_bulk_osint
+    res = @pt.bulk_osint(["passivetotal.org", "xxxmobiletubez.com"]).response.results
+    field_tester(res, ['results'])
+    field_tester(res['results'], ["passivetotal.org", "xxxmobiletubez.com"])
+    assert_equal(res['results']['passivetotal.org']['results'], [])
+    res['results']['xxxmobiletubez.com']['results'].each do |rec|
+      field_tester(rec, ['source', 'sourceUrl', 'tags'])
     end
   end
   
@@ -202,6 +221,18 @@ class PassivetotalTest < Minitest::Test
     res = @pt.malware("98.124.243.47").response.results
     field_tester(res, ['results'])
     res['results'].each do |rec|
+      field_tester(rec, ['source', 'sourceUrl', 'sample', 'collectionDate'])
+    end
+  end
+  
+  def test_bulk_malware
+    res = @pt.bulk_malware(["passivetotal.org", "xxxvideotube.org"]).response.results
+    field_tester(res, ['results'])
+    field_tester(res['results'], ["passivetotal.org", "xxxvideotube.org"])
+    field_tester(res['results']['passivetotal.org'], ['results'])
+    assert_equal(res['results']['passivetotal.org']['results'], [])
+    field_tester(res['results']['xxxvideotube.org'], ['results'])
+    res['results']['xxxvideotube.org']['results'].each do |rec|
       field_tester(rec, ['source', 'sourceUrl', 'sample', 'collectionDate'])
     end
   end
