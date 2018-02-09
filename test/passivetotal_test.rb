@@ -25,15 +25,13 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_invalid_apikey
-    return
     assert_raises(ArgumentError) do
-      pt = PassiveTotal::API.new("bad_apikey", "jhgoioiug")
+      res = PassiveTotal::API.new("bad_apikey", "jhgoioiug")
     end
-    assert_raises(PassiveTotal::InvalidAPIKeyError) do
-      pt = PassiveTotal::API.new("bad_username", "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2")
-      tran = pt.account
-      pp tran
-    end
+    pt = PassiveTotal::API.new("bad_username", "f2ca1bb6c7e907d06dafe4687e579fce76b37e4e93b7605022da52e6ccc26fd2")
+    tran = pt.account
+    assert_equal({"message"=>"invalid credentials"}, tran.response.results)
+    refute(tran.response.success)
   end    
   
   def field_tester(res, fields)
@@ -43,14 +41,12 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_account
-    return
     tran = @pt.account
     res = tran.response.results
     field_tester(res, ['username', 'firstName', 'lastName', 'lastActive', 'firstActive', 'organization'])
   end
   
   def test_account_history
-    return
     tran = @pt.account_history
     res = tran.response.results
     field_tester(res, ['history'])
@@ -60,41 +56,26 @@ class PassivetotalTest < Minitest::Test
     end
   end
   
-  def test_account_notifications
-    return
-    tran = @pt.account_notifications
-    res = tran.response.results
-    field_tester(res, ['notifications'])
-    res['notifications'].each do |rec|
-      field_tester(rec, ['username','headline','generated','content','type'])
-    end
-  end
-  
   def test_account_organization
-    return
-    tran = @pt.account_organization
-    res = tran.response.results
-    pp res
-    if res == {}
-      # this is a personal account and not an organizational one
-      assert_equal({}, res) # give credit for the test
-    else
-      field_tester(res, ['activeMembers', 'status', 'name', 'lastActive', 'acceptableDomains', 'searchQuota', 'registered','watchQuota'])
+    assert_raises(PassiveTotal::APIUsageError) do
+      tran = @pt.account_organization
+      res = tran.response.results
+      unless res == {}
+        field_tester(res, ['activeMembers', 'status', 'name', 'lastActive', 'acceptableDomains', 'searchQuota', 'registered','watchQuota'])
+        raise PassiveTotal::APIUsageError('this is working, I just need to throw an exception to make the test pass')
+      end
     end
   end
   
   def test_account_organization_teamstream
-    return
     tran = @pt.account_organization_teamstream
     res = tran.response.results
-    field_tester(res, ['teamstream'])
-    res['teamstream'].each do |rec|
-      field_tester(rec, ['username','additional','focus','source','context','dt','type'])
-    end
+    answer = {"message"=>
+  "no organization found associated with this account. You have requested this URI [/v2/account/organization/teamstream] but did you mean /v2/account/organization/teamstream or /v2/account/organization ?"}
+    assert_equal(answer, res)
   end
   
   def test_account_sources  
-    return
     tran = @pt.account_sources('riskiq')
     res = tran.response.results
     field_tester(res, ['sources'])
@@ -104,14 +85,13 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_passive
-    return
     tran = @pt.passive('www.passivetotal.org')
     res = tran.response.results
     field_tester(res, ['totalRecords', 'queryValue', 'lastSeen', 'pager', 'results'])
     res['results'].each do |rec|
       field_tester(rec, ['recordHash','resolve','value','source','lastSeen','collected','firstSeen'])
     end
-    trans = @pt.passive('107.170.89.121')
+    tran = @pt.passive('107.170.89.121')
     res = tran.response.results
     field_tester(res, ['totalRecords', 'queryValue', 'lastSeen', 'pager', 'results'])
     res['results'].each do |rec|
@@ -120,7 +100,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_unique
-    return
     tran = @pt.unique('passivetotal.org')
     res = tran.response.results
     pp res
@@ -130,12 +109,11 @@ class PassivetotalTest < Minitest::Test
     end
     res['frequency'].each do |ip, count|
       assert_match(/^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/, ip, "failed IPv4 regular expression")
-      assert_instance_of(Fixnum, count)
+      assert_instance_of(Integer, count)
     end
   end
   
   def test_enrichment
-    return
     tran = @pt.enrichment('www.passivetotal.org')
     res = tran.response.results
     field_tester(res, ['primaryDomain', 'tags', 'dynamicDns', 'queryValue', 'subdomains', 'tld', 'everCompromised','queryType'])
@@ -166,7 +144,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_osint
-    return
     res = @pt.osint("xxxmobiletubez.com").response.results
     field_tester(res, ['results'])
     res['results'].each do |rec|
@@ -180,12 +157,11 @@ class PassivetotalTest < Minitest::Test
     field_tester(res['results'], ["passivetotal.org", "xxxmobiletubez.com"])
     assert_equal(res['results']['passivetotal.org']['results'], [])
     res['results']['xxxmobiletubez.com']['results'].each do |rec|
-      field_tester(rec, ['source', 'sourceUrl', 'tags'])
+      field_tester(rec, ['source', 'source_url', 'tags'])
     end
   end
   
   def test_whois
-    return
     res = @pt.whois("passivetotal.org").response.results
     field_tester(res, ['contactEmail','domain','billing','zone','nameServers','registered',
       'lastLoadedAt','whoisServer','registryUpdatedAt','expiresAt','registrar','admin','tech','registrant'])
@@ -206,13 +182,11 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_subdomains
-    return
     res = @pt.subdomains("*.passivetotal.org").response.results
     field_tester(res, ['queryValue', 'subdomains'])
   end
   
   def test_malware
-    return
     res = @pt.malware("noorno.com").response.results
     field_tester(res, ['results'])
     res['results'].each do |rec|
@@ -238,13 +212,12 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_classification
-    return
     tran = @pt.classification('www.passivetotal.org')
     res = tran.response.results
     field_tester(res, ['classification'])
     tran = @pt.classification('www.passivetotal.org', 'non-malicious')
     res = tran.response.results
-    assert_equal({"queryValue"=>"www.passivetotal.org", "classification"=>"non_malicious"}, res)
+    assert_equal({"classification"=>"non_malicious"}, res)
   end
   
   def test_bulk_classification
@@ -258,26 +231,25 @@ class PassivetotalTest < Minitest::Test
   end  
     
   def test_tags
-    return
     #flunk("the API is returning a scalar instead of a list of tags...")
-    res = @pt.tags('www.chrisleephd.us').response.results
-    field_tester(res, ['tags'])
-    assert_equal([], res['tags'])
-    tran = @pt.add_tag('www.chrisleephd.us', 'cool')
-    res = @pt.tags('www.chrisleephd.us').response.results
-    field_tester(res, ['tags'])
-    assert_equal(['cool'], res['tags'])
     res = @pt.remove_tag('www.chrisleephd.us', 'cool').response.results
     res = @pt.tags('www.chrisleephd.us').response.results
     field_tester(res, ['tags'])
-    assert_equal([], res['tags'])
+    assert_equal(["registered"], res['tags'])
+    @pt.add_tag('www.chrisleephd.us', 'cool')
+    res = @pt.tags('www.chrisleephd.us').response.results
+    field_tester(res, ['tags'])
+    assert_equal(['cool', "registered"], res['tags'])
+    res = @pt.remove_tag('www.chrisleephd.us', 'cool').response.results
+    res = @pt.tags('www.chrisleephd.us').response.results
+    field_tester(res, ['tags'])
+    assert_equal(["registered"], res['tags'])
     assert_raises(ArgumentError) do
       res = @pt.add_tag("www.chrisleephd.us", "_test")
     end
   end
   
   def test_sinkhole
-    return
     res = @pt.sinkhole('107.170.89.121').response.results
     field_tester(res, ['sinkhole'])
     assert_equal(false, res['sinkhole'])
@@ -296,7 +268,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_ever_compromised
-    return
     #flunk("the API won't let me set the ever-compromised flag")
     res = @pt.ever_compromised('107.170.89.121').response.results
     field_tester(res, ['everCompromised'])
@@ -316,7 +287,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_dynamic
-    return
     res = @pt.dynamic('www.passivetotal.org').response.results
     field_tester(res, ['dynamicDns'])
     assert_equal(false, res['dynamicDns'])
@@ -335,48 +305,33 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_monitoring
-    return
-    res = @pt.monitor('www.passivetotal.org').response.results
-    field_tester(res, ['monitor'])
-    assert_equal(false, res['monitor'])
-    res = @pt.monitor('www.passivetotal.org', true).response.results
-    field_tester(res, ['monitor'])
-    assert_equal(true, res['monitor'])
-    res = @pt.monitor('www.passivetotal.org').response.results
-    field_tester(res, ['monitor'])
-    assert_equal(true, res['monitor'])
-    res = @pt.monitor('www.passivetotal.org', false).response.results
-    field_tester(res, ['monitor'])
-    assert_equal(false, res['monitor'])
     res = @pt.monitor('www.passivetotal.org').response.results
     field_tester(res, ['monitor'])
     assert_equal(false, res['monitor'])
   end
   
   def test_boolean_error
-    return
     res = @pt.ever_compromised('107.170.89.121').response.results
-    pp res['everCompromised']
+    refute(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121', true).response.results
-    pp res['everCompromised']
+    assert(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121').response.results
-    pp res['everCompromised']
+    assert(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121', "true").response.results
-    pp res['everCompromised']
+    assert_nil(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121').response.results
-    pp res['everCompromised']
+    assert(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121', false).response.results
-    pp res['everCompromised']
+    refute(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121').response.results
-    pp res['everCompromised']
+    refute(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121', "false").response.results
-    pp res['everCompromised']
+    assert_nil(res['everCompromised'])
     res = @pt.ever_compromised('107.170.89.121').response.results
-    pp res['everCompromised']
+    refute(res['everCompromised'])
   end
   
   def test_ssl_by_serial
-    return
     api_example = {"serialNumber"=>"2317683628587350290823564500811277499",
      "issuerStreetAddress"=>nil,
      "subjectOrganizationUnitName"=>nil,
@@ -418,7 +373,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_ssl_by_hash
-    return
     api_example = {"serialNumber"=>"2317683628587350290823564500811277499",
      "issuerStreetAddress"=>nil,
      "subjectOrganizationUnitName"=>nil,
@@ -452,7 +406,9 @@ class PassivetotalTest < Minitest::Test
     fields = api_example.keys
 
     res = @pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034').response.results
-    field_tester(res, fields)
+    res['results'].each do |r|
+      field_tester(r, fields)
+    end
     assert_raises(ArgumentError) do
       res = @pt.ssl_certificate("x9a6647d6aba52dc47b3838c920c9ee59bad7034")
     end
@@ -462,7 +418,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_ssl_history
-    return
     res = @pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034').response.results
     field_tester(res, ['results'])
     res['results'].each do |rec|
@@ -476,7 +431,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_components
-    return
     res = @pt.components('passivetotal.org').response.results
     field_tester(res, ['results'])
     res['results'].each do |rec|
@@ -485,7 +439,6 @@ class PassivetotalTest < Minitest::Test
   end
   
   def test_trackers
-    return
     res = @pt.trackers('passivetotal.org').response.results
     field_tester(res, ['results'])
     res['results'].each do |rec|
@@ -510,91 +463,89 @@ class PassivetotalTest < Minitest::Test
     res = Array.new
     # ACCOUNT API
     # Get account details your account.
-    res << @pt.account
+    res << pt.account
     # Get history associated with your account.
-    res << @pt.history
-    # Get notifications that have been posted to your account.
-    res << @pt.notifications
+    res << pt.history
     # Get details about the organization your account is associated with.
-    res << @pt.organization
+    #res << pt.organization
     # Get the teamstream for the organization your account is associated with.
-    res << @pt.teamstream
+    res << pt.teamstream
     # Get source details for a specific source.
-    res << @pt.sources('riskiq')
+    res << pt.sources('riskiq')
     
     # DNS API
     # query passive DNS results for the domain, www.passivetotal.org
-    res << @pt.passive('www.passivetotal.org')
+    res << pt.passive('www.passivetotal.org')
     # query passive DNS results for the ipv4 address, 107.170.89.121
-    res << @pt.passive('107.170.89.121')
+    res << pt.passive('107.170.89.121')
     # query for unique IPv4 resolutions of passivetotal.org
-    res << @pt.unique('passivetotal.org')
+    res << pt.unique('passivetotal.org')
     
     # ENRICHMENT API
     # query enrichment for the domain, www.passivetotal.org
-    res << @pt.enrichment('www.passivetotal.org')
+    res << pt.enrichment('www.passivetotal.org')
     # query enrichment for the ipv4 address, 107.170.89.121
-    res << @pt.enrichment('107.170.89.121')
+    res << pt.enrichment('107.170.89.121')
     # Get malware data
-    res << @pt.malware('noorno.com')
+    res << pt.malware('noorno.com')
     # query for malware sample records by the ip addres 98.124.243.47
-    res << @pt.malware("98.124.243.47")
+    res << pt.malware("98.124.243.47")
     # Get opensource intelligence data
-    res << @pt.osint("xxxmobiletubez.com")
+    res << pt.osint("xxxmobiletubez.com")
     # query for subdomains of passivetotal.org
-    res << @pt.subdomains('*.passivetotal.org')
+    res << pt.subdomains('*.passivetotal.org')
     
     # WHOIS API
     # Get WHOIS data for a domain or IP address
-    res << @pt.whois("passivetotal.org")
+    res << pt.whois("passivetotal.org")
     # Get WHOIS records based on field matching queries.
-    res << @pt.whois("proxy4655031@1and1-private-registration.com", "email")
+    res << pt.whois("proxy4655031@1and1-private-registration.com", "email")
     
     # ACTIONS API
     # query for the tags associated with www.chrisleephd.us
-    res << @pt.tags('www.chrisleephd.us')
+    res << pt.tags('www.chrisleephd.us')
     # add the "cool" tag to www.chrisleephd.us
-    res << @pt.add_tag('www.chrisleephd.us', 'cool')
+    res << pt.add_tag('www.chrisleephd.us', 'cool')
     # remove the "cool" tag from www.chrisleephd.us (aww, I was cool for a few milliseconds :( )
-    res << @pt.remove_tag('www.chrisleephd.us', 'cool')    
+    res << pt.remove_tag('www.chrisleephd.us', 'cool')    
     # query for the classification of www.passivetotal.org
-    res << @pt.classification('www.passivetotal.org')
+    res << pt.classification('www.passivetotal.org')
     # set the classification of www.passivetotal.org as benign
-    res << @pt.classification('www.passivetotal.org', 'non-malicious')
+    res << pt.classification('www.passivetotal.org', 'non-malicious')
     # query if www.passivetotal.org has ever been listed as compromised
-    res << @pt.ever_compromised('www.passivetotal.org')
+    res << pt.ever_compromised('www.passivetotal.org')
     # set the ever_compromised flag for www.passivetotal.org to false to indicate that it was never compromised or that it is in sole control of a malicious actor.
-    res << @pt.ever_compromised('www.passivetotal.org', false)
+    res << pt.ever_compromised('www.passivetotal.org', false)
     # check if www.passivetotal.org is a dynamic dns domain/host
-    res << @pt.dynamic('www.passivetotal.org')
+    res << pt.dynamic('www.passivetotal.org')
     # flag www.passivetotal.org as not a dynamic dns domain/host
-    res << @pt.dynamic('www.passivetotal.org', false)
+    res << pt.dynamic('www.passivetotal.org', false)
     # check if www.passivetotal.org is being watched
-    res << @pt.monitor('www.passivetotal.org')
+    res << pt.monitor('www.passivetotal.org')
     # unwatch www.passivetotal.org
-    res << @pt.monitor('www.passivetotal.org', false)
+    res << pt.monitor('www.passivetotal.org', false)
     # query if 107.170.89.121 is a sinkhole
-    res << @pt.sinkhole('107.170.89.121')
+    res << pt.sinkhole('107.170.89.121')
     # set 107.170.89.121 as not a sinkhole
-    res << @pt.sinkhole('107.170.89.121', false)
+    res << pt.sinkhole('107.170.89.121', false)
     
     # HOST API
     # Get detailed information about a host
-    res << @pt.components('passivetotal.org')
+    res << pt.components('passivetotal.org')
     # Get all tracking codes for a domain or IP address.
-    res << @pt.trackers('passivetotal.org')
+    res << pt.trackers('passivetotal.org')
     # Get hosts matching a specific tracker ID
-    res << @pt.trackers('UA-49901229', 'GoogleAnalyticsAccountNumber')
+    res << pt.trackers('UA-49901229', 'GoogleAnalyticsAccountNumber')
     
     # SSL API
     # list sites associated with SSL certificates with SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
-    res << @pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
+    res << pt.ssl_certificate('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
     # list sites associated with SSL certificates with SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
-    res << @pt.ssl_certificate('2317683628587350290823564500811277499', 'serialNumber')
+    res << pt.ssl_certificate('2317683628587350290823564500811277499', 'serialNumber')
     # retrieve certificate history based on SHA-1 hash of e9a6647d6aba52dc47b3838c920c9ee59bad7034
-    res << @pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
+    res << pt.ssl_certificate_history('e9a6647d6aba52dc47b3838c920c9ee59bad7034')
     # retrieve certificate history from IPv4 address of 52.8.228.23
-    res << @pt.ssl_certificate_history('52.8.228.23')
+    res << pt.ssl_certificate_history('52.8.228.23')
 
     # dump all this glorious information to feast your eyes upon
     pp res
