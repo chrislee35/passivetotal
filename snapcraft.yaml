@@ -10,8 +10,9 @@ parts:
   passivetotal:
     source: .
     plugin: nil
-    build: gem build passivetotal.gemspec
-    install: gem install passivetotal-*.gem
+    override-build: |
+      /usr/bin/gem build *.gemspec
+      /usr/bin/gem install *.gem
     build-packages: [ruby, gcc, libc6-dev, make, ruby-dev]
     stage-packages: [ruby]
 
