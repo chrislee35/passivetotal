@@ -1,0 +1,24 @@
+name: passivetotal
+version: '1.0.5'
+summary: Wrapper library for PassiveTotal.org's Web API
+description: |
+  The PassiveTotal gem is (currently) a thin wrapper around PassiveTotal.org's Web-based API.
+grade: stable
+confinement: strict
+
+parts:
+  passivetotal:
+    source: .
+    plugin: nil
+    build: gem build passivetotal.gemspec
+    install: gem install passivetotal-*.gem -i $SNAPCRAFT_PART_INSTALL
+    build-packages: [gcc, libc6-dev, make, ruby-dev]
+    stage-packages: [ruby]
+
+apps:
+  passivetotal:
+    environment:
+      RUBYLIB: $SNAP/usr/lib/ruby/2.3.0:$SNAP/usr/lib/x86_64-linux-gnu/ruby/2.3.0
+      GEM_HOME: $SNAP/gems
+      GEM_PATH: $SNAP
+    command: ruby $SNAP/bin/passivetotal
