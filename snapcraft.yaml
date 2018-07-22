@@ -11,7 +11,7 @@ parts:
     source: .
     plugin: nil
     build: gem build passivetotal.gemspec
-    install: gem install passivetotal-*.gem -i $SNAPCRAFT_PART_INSTALL
+    install: gem install passivetotal-*.gem
     build-packages: [ruby, gcc, libc6-dev, make, ruby-dev]
     stage-packages: [ruby]
 
