@@ -551,6 +551,7 @@ module PassiveTotal # :nodoc:
       )
 
       case response.code
+      when "200"
       when "401"
         raise InvalidAPIKeyError.new(obj)
       when "429"
